@@ -4,7 +4,9 @@ class Data{
 //communicate with the topology class to make sure n matches the number of neurons in the input layer
 public:
 
-    Data(std::string training_data_path, std::string test_data_path);
+    Data(void);
+
+    void generate_binary_data(void);
 
     class TestData{
     public:
@@ -21,6 +23,8 @@ public:
 
     Eigen::MatrixXd training_set;
     Eigen::MatrixXd test_set;
+    Eigen::MatrixXd solutions;
+    int num_training_images;
 
 private:
     std::vector< std::vector<std::string> > find_training_files(std::string file_path);
@@ -29,5 +33,11 @@ private:
     std::vector< std::vector<std::string> > training_files;
     std::vector<std::string> test_files;
 
-    void process_image(void);
+    void get_training_set(void);
+
+    void randomize_data(void);
+
+    void get_test_set(void);
+
+    Eigen::VectorXd get_binary(int num);
 };
