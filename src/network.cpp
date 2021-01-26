@@ -2,31 +2,33 @@
 #include <vector>
 #include <eigen3/Eigen/Core>
 #include <iostream>
+#include <fstream>
 Network::Network(void){
     //test_set = data.test_set;
+    assembler = new Data::Function_Data();
 
-    sols = data.solutions;
-    std::cout << sols << std::endl << std::endl;
+    sols = assembler->solutions;
 
-    activationTopology = {new Topology::Relu(), new Topology::Sigmoid};
-
+    //Gather Topology
+    func = new Topology::MeanSquaredError();
+    activationTopology = topology.activationTopology;
     numLayers = topology.topology.size();
-    learning_rate = 0.05;
-    numExamples = data.training_set.cols();
 
-    numEpochs = 1;
 
-    func = new Topology::LogisticRegression();
+    //Establish hyperparameters
+    learning_rate = 0.001;
+    numEpochs = 500000;
+    numExamples = assembler->training_set.cols();
 
     for(int i = 0; i < numLayers - 1; ++i){
         Eigen::MatrixXd weight_layer = Eigen::MatrixXd::Random(topology.topology[i + 1], topology.topology[i]);
-        weights.push_back(weight_layer);
-        weight_layer = weight_layer.array() * 0;
-        dw.push_back(weight_layer);
+        weight_layer.array() += 1;
+        weights.push_back(weight_layer / 40);
+        dw.push_back(weight_layer * 0);
 
-        Eigen::MatrixXd bias_layer = Eigen::MatrixXd::Random(topology.topology[i + 1], 1);
+        Eigen::MatrixXd bias_layer = Eigen::MatrixXd::Zero(topology.topology[i + 1], 1);
         biases.push_back(bias_layer);
-        db.push_back(bias_layer * 0);
+        db.push_back(bias_layer);
     }
 
     for(int i = 0; i < numLayers; ++i){
@@ -36,99 +38,73 @@ Network::Network(void){
 
         dz.push_back(activation_layer);
         da.push_back(activation_layer);
-        da_prev.push_back(activation_layer);
     }
 
-    activations[0] = data.training_set;
-    std::cout << activations[0] << std::endl << std::endl;
+    activations[0] = assembler->training_set;
 }
 
 void Network::forwardProp(void){
-    for(int i = 0; i < this->numLayers - 1; ++i){
-        this->sums[i + 1] = (this->weights[i] * this->activations[i]);
-        this->sums[i + 1].colwise() += this->biases[i].col(0);
-        this->activations[i + 1] = this->activationTopology[i]->activationFunction(this->sums[i + 1]);
+    for(int i = 0; i < numLayers - 1; ++i){
+        sums[i + 1] = (weights[i] * activations[i]);
+        sums[i + 1].colwise() += biases[i].col(0);
+        activations[i + 1] = this->activationTopology[i]->activationFunction(sums[i + 1]);
 
-
-
-        std::cout << "w: " << this->weights[i] << std::endl << std::endl;
-        std::cout << "b: " << this->biases[i] << std::endl << std::endl;
-        std::cout << "s: " << this->sums[i + 1] << std::endl << std::endl;
-        std::cout << "a: " << this->activations[i + 1] << std::endl << std::endl;
-
+//        std::cout << "w[" << i << "]: " << std::endl << weights[i] << std::endl << std::endl;
+//        std::cout << "b[" << i << "]: " << std::endl << biases[i] << std::endl << std::endl;
+//        std::cout << "s[" << i << "]: " << std::endl << sums[i + 1] << std::endl << std::endl;
+//        std::cout << "a[" << i + 1 << "]: " << std::endl << activations[i + 1] << std::endl << std::endl;
     }
+ //       std::cout << "Output " << std::endl << activations[activations.size() - 1] << std::endl << std::endl;
 }
 
 void Network::backwardProp(void){
-    for(int i = numLayers - 1; i > 0; --i){
-
-//        if(i == (numLayers - 1)){
-//            this->da[i] = this->func->lossFunctionDerivative(this->activations[i], this->sols, this->numExamples);
-//        }else{
-//            this->da[i] = this->da_prev[i];
-//        }
-//
-//        std::cout << "da: " << this->da[i] << std::endl << std::endl;
-//
-//        this->dz[i] = this->da[i].array() * this->activationTopology[i - 1]->activationFunctionDerivative(this->sums[i]).array();
-//
-//        std::cout << "dz: " << this->dz[i] << std::endl << std::endl;
-//
-//        this->dw[i - 1] = this->dz[i] * this->activations[i - 1].transpose();
-//        this->dw[i - 1].array() /= this->numExamples;
-//
-//        std::cout << "dw: " << this->dw[i - 1] << std::endl << std::endl;
-//
-//        Eigen::MatrixXd temp = this->dz[i].rowwise().sum();
-//        this->db[i - 1] = temp.rowwise().sum() / numExamples;
-//
-//        std::cout << "db: " << this->db[i - 1] << std::endl << std::endl;
-//
-//        this->da_prev[i - 1] = this->weights[i - 1].transpose() * this->dz[i];
-//
-//        std::cout << "da_prev: " << this->da_prev[i - 1] << std::endl << std::endl;
-   }
-
-    std::cout << "LOSS: " << this->func->lossFunction(this->activations[2], this->sols, this->numExamples) << std::endl << std::endl;
+    //std::cout << "Solution " << std::endl << sols << std::endl << std::endl;
+    Eigen::MatrixXd loss = this->func->lossFunctionDerivative(assembler->process_output(activations[0], activations[activations.size() - 1]), sols, numExamples);
+//    std::cout << "loss: " << std::endl << loss << std::endl << std::endl;
+    db[db.size() - 1] = this->activationTopology[this->activationTopology.size() - 1]->activationFunctionDerivative(sums[sums.size() - 1]).array() * loss.array();
+    for(int i = numLayers - 2; i > 0; --i){
+        dw[i] = db[i] * (activations[i].transpose());
+        db[i - 1] = this->activationTopology[i]->activationFunctionDerivative(sums[i]).array() * (weights[i].transpose() * db[i]).array();
+    }
+    dw[0] = db[0] * (activations[0].transpose());
 }
 
 void Network::update_parameters(void){
-    for(int i = this->dw.size() - 1; i >= 0; --i){
-        this->weights[i] = this->weights[i].array() - (this->learning_rate * this->dw[i].array());
-        this->biases[i] = biases[i].array() - (this->learning_rate * this->db[i].array());
+    for(int i = dw.size() - 1; i >= 0; --i){
+        weights[i] += (learning_rate * dw[i]);
+        biases[i] += (learning_rate * db[i]);
     }
-}
-
-void Network::run_test(void){
-    this->activations[0] = this->test_set;
-    this->forwardProp();
-    std::cout << activations[2].col(0) << std::endl;
 }
 
 void Network::update_data(void){
-    this->data.generate_binary_data();
-    this->activations[0] = data.training_set;
-    this->sols = this->data.solutions;
+    assembler->get_training_data();
+    this->activations[0] = assembler->training_set;
+    this->sols = this->assembler->solutions;
+}
+
+void Network::run_test(void){
+    for(int i = 0; i < 20; ++i){
+        assembler->get_test_data();
+        activations[0] = assembler->test_set;
+        forwardProp();
+        std::cout << "Output: " << std::endl << activations[activations.size() - 1].array().round() << std::endl << std::endl;
+    }
 }
 
 int main(int argc, char *argv[]){
-    //m = number of examples in the epoch
-    //Z matrix = (rows = nodes[i], cols = m)
-    //A matrix = Z matrix size
-    //W matrix = (rows = nodes[i + 1], cols = nodes[i])
-    //B matrix = (rows = nodes[i], cols = m)
-    //A[0] = X
     Network net;
     std::cout << "Training network..." << std::endl;
-    for(int i = 0; i < net.numEpochs; ++i){
-        std::cout << "Epoch " << i + 1<< std::endl;
-        std::cout << "training examples: " << std::endl << net.activations[0] << std::endl << std::endl;
-        std::cout << "training solutions: " << std::endl << net.sols << std::endl << std::endl;
+    for(int i = 1; i <= net.numEpochs; ++i){
+        //std::cout << "Epoch " << i << std::endl;
+        if(i % (net.numEpochs / 10) == 0){
+            std::cout << (double(i) / net.numEpochs) * 100 << "%..." << std::endl;
+        }
         net.forwardProp();
         net.backwardProp();
-        //net.update_parameters();
-        //net.update_data();
+        net.update_parameters();
+        net.update_data();
     }
-//    net.run_test();
     std::cout << "Training complete." << std::endl;
+    std::cout << "Running Tests..." << std::endl;
+    net.run_test();
 }

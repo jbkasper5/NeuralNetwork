@@ -16,9 +16,9 @@ public:
     int numExamples;
     double learning_rate;
     Topology::LossFunctions* func;
+    Data::Data_Assembly* assembler;
     std::vector<Topology::ActivationFunctions*> activationTopology;
     Topology topology;
-    Data data;
 
     Eigen::MatrixXd test_set;
 
@@ -30,7 +30,7 @@ public:
     std::vector<Eigen::MatrixXd> db;
     std::vector<Eigen::MatrixXd> dz;
     std::vector<Eigen::MatrixXd> da;
-    std::vector<Eigen::MatrixXd> da_prev;
     Eigen::MatrixXd sols;
+
 private:
 };

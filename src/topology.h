@@ -5,12 +5,11 @@ class Topology{
 //contain and correctly assign the activation functions to each layer -- DONE
 //communicate with the data class to make sure that the number of input neurons matches the size of the data vector
 public:
-
-    std::vector<int> topology;
-
     Topology(void);
 
     void get_topology(void);
+
+    //Activation Functions
 
     class ActivationFunctions{
     public:
@@ -47,6 +46,8 @@ public:
     private:
     };
 
+    //Loss Functions
+
     class LossFunctions{
     public:
         virtual Eigen::MatrixXd lossFunction(Eigen::MatrixXd m, Eigen::MatrixXd sols, int numExamples) = 0;
@@ -54,10 +55,25 @@ public:
     private:
     };
 
-    class LogisticRegression: public LossFunctions{
+    class LogLoss: public LossFunctions{
         Eigen::MatrixXd lossFunction(Eigen::MatrixXd m, Eigen::MatrixXd sols, int numExamples);
         Eigen::MatrixXd lossFunctionDerivative(Eigen::MatrixXd m, Eigen::MatrixXd sols, int numExamples);
     };
+
+    class MeanSquaredError: public LossFunctions{
+        Eigen::MatrixXd lossFunction(Eigen::MatrixXd m, Eigen::MatrixXd sols, int numExamples);
+        Eigen::MatrixXd lossFunctionDerivative(Eigen::MatrixXd m, Eigen::MatrixXd sols, int numExamples);
+    };
+
+    //Learning Rate Decay Functions
+
+    class LearningRateDecay{
+    public:
+        double getLearningRate();
+    };
+
+    std::vector<int> topology;
+    std::vector<Topology::ActivationFunctions*> activationTopology;
 
 private:
 };

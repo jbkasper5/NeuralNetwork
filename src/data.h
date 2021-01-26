@@ -6,38 +6,59 @@ public:
 
     Data(void);
 
-    void generate_binary_data(void);
-
-    class TestData{
+    class Data_Assembly{
     public:
-    private:
+        virtual void get_training_data(void) = 0;
+        virtual void get_test_data(void) = 0;
+        virtual void randomize_data(void) = 0;
+        virtual Eigen::MatrixXd process_output(Eigen::MatrixXd input, Eigen::MatrixXd output) = 0;
 
+        Eigen::MatrixXd training_set;
+        Eigen::MatrixXd test_set;
+        Eigen::MatrixXd solutions;
     };
 
-    class ActualData{
+    class MNIST_Data: public Data_Assembly{
     public:
-
+        void get_training_data(void);
+        void get_test_data(void);
+        void randomize_data(void);
+        Eigen::MatrixXd process_output(Eigen::MatrixXd input, Eigen::MatrixXd output);
     private:
+        std::vector< std::vector<std::string> > training_files;
+        std::vector<std::string> test_files;
+        int num_training_images;
 
+        std::vector< std::vector<std::string> > find_training_files(std::string file_path);
+        std::vector<std::string> find_test_files(std::string file_path);
     };
 
-    Eigen::MatrixXd training_set;
-    Eigen::MatrixXd test_set;
-    Eigen::MatrixXd solutions;
-    int num_training_images;
+    class Binary_Data: public Data_Assembly{
+    public:
+        Binary_Data(void);
+        void get_training_data(void);
+        void get_test_data(void);
+        void randomize_data(void);
+        Eigen::MatrixXd process_output(Eigen::MatrixXd input, Eigen::MatrixXd output);
+    private:
+        Eigen::VectorXd get_binary(int num);
+    };
+
+    class Function_Data: public Data_Assembly{
+    public:
+        Function_Data();
+        void get_training_data(void);
+        void get_test_data(void);
+        void randomize_data(void);
+        Eigen::MatrixXd process_output(Eigen::MatrixXd input, Eigen::MatrixXd output);
+    private:
+        Eigen::VectorXd get_binary(int num);
+    };
+
+    class Memory_Storage{
+    public:
+    private:
+    };
 
 private:
-    std::vector< std::vector<std::string> > find_training_files(std::string file_path);
-    std::vector<std::string> find_test_files(std::string file_path);
-
-    std::vector< std::vector<std::string> > training_files;
-    std::vector<std::string> test_files;
-
-    void get_training_set(void);
-
-    void randomize_data(void);
-
-    void get_test_set(void);
-
-    Eigen::VectorXd get_binary(int num);
 };
