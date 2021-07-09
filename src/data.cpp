@@ -1,5 +1,6 @@
 #include <dirent.h>
 #include <string>
+#include <fstream>
 #include <iostream>
 #include <vector>
 #include <iomanip>
@@ -213,4 +214,89 @@ Eigen::VectorXd Data::Function_Data::get_binary(int num){
         vec[19 - i] = double(map[i]);
     }
     return vec;
+}
+
+//----------CSV Data----------//
+Data::CSV_Data::CSV_Data(void){
+    get_training_data();
+}
+
+void Data::CSV_Data::get_training_data(void){
+    std::string input_filepath = "/Users/jakekasper/Jake_Python/Pytorch/inputs.csv";
+    std::string key_filepath = "/Users/jakekasper/Jake_Python/Pytorch/keys.csv";
+
+    std::ifstream inputs;
+    std::ifstream keys;
+
+    inputs.open(input_filepath);
+
+    std::string line;
+    std::vector< std::vector<std::string> > input_data;
+    std::vector<std::string> vec;
+    int i = 0;
+    while(getline(inputs, line)){
+        input_data.push_back(vec);
+        std::stringstream lineStream(line);
+        std::string cell;
+
+        while (std::getline(lineStream, cell, ','))
+        {
+            input_data[i].push_back(cell);
+        }
+        ++i;
+    }
+
+    inputs.close();
+
+    keys.open(key_filepath);
+
+    std::vector<std::string> sols;
+    i = 0;
+    while(getline(keys, line)){
+        std::stringstream lineStream(line);
+        std::string cell;
+
+        while (std::getline(lineStream, cell, ','))
+        {
+            sols.push_back(cell);
+        }
+        ++i;
+    }
+
+    keys.close();
+
+    Eigen::MatrixXd mat(100, 160);
+
+    for(int i = 0; i < mat.rows(); ++i){
+        for(int j = 0; j < mat.cols(); ++j){
+            mat(i, j) = stod(input_data[j][i]);
+        }
+    }
+
+    Eigen::MatrixXd sols_mat(2, 160);
+
+    for(int i = 0; i < sols_mat.cols(); ++i){
+        sols_mat(0, i) = stoi(sols[i]);
+        if(sols_mat(0, i) == 1){
+            sols_mat(1, i) = 0;
+        }else{
+            sols_mat(1, i) = 1;
+        }
+    }
+
+    int random_index = rand() % mat.cols();
+    training_set = mat.col(random_index);
+    solutions = sols_mat.col(random_index);
+}
+
+void Data::CSV_Data::get_test_data(void){
+
+}
+
+void Data::CSV_Data::randomize_data(void){
+
+}
+
+Eigen::MatrixXd Data::CSV_Data::process_output(Eigen::MatrixXd input, Eigen::MatrixXd output){
+    return output;
 }

@@ -1,7 +1,4 @@
 class Data{
-//determine what kind of data the user wants (custom vs image vs other)
-//process the data into a (n, 1) matrix
-//communicate with the topology class to make sure n matches the number of neurons in the input layer
 public:
 
     Data(void);
@@ -53,6 +50,17 @@ public:
         Eigen::MatrixXd process_output(Eigen::MatrixXd input, Eigen::MatrixXd output);
     private:
         Eigen::VectorXd get_binary(int num);
+    };
+
+    //temporary class - handle true csv structures in the future
+    class CSV_Data: public Data_Assembly{
+    public:
+        CSV_Data();
+        void get_training_data(void);
+        void get_test_data(void);
+        void randomize_data(void);
+        Eigen::MatrixXd process_output(Eigen::MatrixXd input, Eigen::MatrixXd output);
+    private:
     };
 
     class Memory_Storage{

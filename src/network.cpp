@@ -5,19 +5,19 @@
 #include <fstream>
 Network::Network(void){
     //test_set = data.test_set;
-    assembler = new Data::Function_Data();
+    assembler = new Data::CSV_Data();
 
     sols = assembler->solutions;
 
     //Gather Topology
-    func = new Topology::MeanSquaredError();
+    func = new Topology::LogLoss();
     activationTopology = topology.activationTopology;
     numLayers = topology.topology.size();
 
 
     //Establish hyperparameters
-    learning_rate = 0.001;
-    numEpochs = 500000;
+    learning_rate = 0.01;
+    numEpochs = 1000;
     numExamples = assembler->training_set.cols();
 
     for(int i = 0; i < numLayers - 1; ++i){
@@ -54,13 +54,13 @@ void Network::forwardProp(void){
 //        std::cout << "s[" << i << "]: " << std::endl << sums[i + 1] << std::endl << std::endl;
 //        std::cout << "a[" << i + 1 << "]: " << std::endl << activations[i + 1] << std::endl << std::endl;
     }
- //       std::cout << "Output " << std::endl << activations[activations.size() - 1] << std::endl << std::endl;
+    std::cout << "Output " << std::endl << activations[activations.size() - 1] << std::endl << std::endl;
 }
 
 void Network::backwardProp(void){
-    //std::cout << "Solution " << std::endl << sols << std::endl << std::endl;
+    std::cout << "Solution " << std::endl << sols << std::endl << std::endl;
     Eigen::MatrixXd loss = this->func->lossFunctionDerivative(assembler->process_output(activations[0], activations[activations.size() - 1]), sols, numExamples);
-//    std::cout << "loss: " << std::endl << loss << std::endl << std::endl;
+    std::cout << "loss: " << std::endl << loss << std::endl << std::endl;
     db[db.size() - 1] = this->activationTopology[this->activationTopology.size() - 1]->activationFunctionDerivative(sums[sums.size() - 1]).array() * loss.array();
     for(int i = numLayers - 2; i > 0; --i){
         dw[i] = db[i] * (activations[i].transpose());
@@ -93,6 +93,7 @@ void Network::run_test(void){
 
 int main(int argc, char *argv[]){
     Network net;
+    std::cout << "End" << std::endl;
     std::cout << "Training network..." << std::endl;
     for(int i = 1; i <= net.numEpochs; ++i){
         //std::cout << "Epoch " << i << std::endl;
@@ -104,7 +105,7 @@ int main(int argc, char *argv[]){
         net.update_parameters();
         net.update_data();
     }
-    std::cout << "Training complete." << std::endl;
-    std::cout << "Running Tests..." << std::endl;
-    net.run_test();
+//    std::cout << "Training complete." << std::endl;
+//    std::cout << "Running Tests..." << std::endl;
+//    net.run_test();
 }
